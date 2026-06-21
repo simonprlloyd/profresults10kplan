@@ -212,6 +212,25 @@
   .fitem .fbtns button{border:1px solid var(--line);background:var(--surface2);color:var(--txt);border-radius:8px;padding:7px 10px;font-size:12px;font-weight:600;cursor:pointer}
   .fitem .fbtns .didit{background:var(--green);color:#04130c;border-color:var(--green)}
   .fitem .fbtns .x{color:var(--dim)}
+  /* battle plan */
+  .battle{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:15px 16px;margin-bottom:14px}
+  .bhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:13px}
+  .bhead h3{font-size:16px;text-transform:uppercase}
+  .bhead span{font-size:12px;color:var(--green);font-weight:600}
+  .bclock{font-family:"Saira Condensed";font-weight:800;font-size:24px;color:var(--muted)}
+  .blk{display:flex;align-items:stretch;gap:0;border-radius:11px;overflow:hidden;margin-bottom:7px;border:1px solid var(--line);background:var(--surface2);opacity:.62;transition:.2s}
+  .blk.past{opacity:.34}
+  .blk.now{opacity:1;border-color:var(--green);box-shadow:0 0 0 1px var(--green),0 6px 20px -8px rgba(0,224,138,.5)}
+  .blk .btime{flex:none;width:92px;padding:11px 12px;background:rgba(255,255,255,.02);display:flex;flex-direction:column;justify-content:center;border-right:1px solid var(--line)}
+  .blk .bt1{font-family:"Saira Condensed";font-weight:800;font-size:16px;line-height:1}
+  .blk .bt2{font-size:10px;color:var(--dim);margin-top:2px}
+  .blk.now .bt1{color:var(--green)}
+  .blk .bmain{flex:1;padding:11px 13px;min-width:0}
+  .blk .bact{font-weight:700;font-size:14.5px;line-height:1.2}
+  .blk .bdesc{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.35}
+  .blk .bgoal{display:inline-block;margin-top:6px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--green);background:rgba(0,224,138,.1);padding:2px 8px;border-radius:6px}
+  .blk.brk .bgoal{color:var(--amber);background:rgba(255,176,32,.1)}
+  .blk .nowtag{float:right;font-size:9px;font-weight:800;letter-spacing:1px;color:#04130c;background:var(--green);padding:2px 7px;border-radius:5px;text-transform:uppercase}
   @media(max-width:680px){
     .addlead,.logdeal{grid-template-columns:1fr 1fr}
     .goalrow .big{font-size:34px}
@@ -254,6 +273,15 @@
     <div><div class="l">Today's action score</div><div class="v"><span id="score">0</span>%</div></div>
     <div class="msg" id="scoreMsg">Hit your reps. Money loves motion.</div>
   </div>
+
+  <div class="battle">
+    <div class="bhead">
+      <div><h3>Battle plan</h3><span id="bnow">—</span></div>
+      <div class="bclock" id="bclock">--:--</div>
+    </div>
+    <div id="schedule"></div>
+  </div>
+
   <div class="reps" id="reps"></div>
 
   <div class="ratiowrap" id="ratiowrap">
@@ -369,6 +397,20 @@ const ROUTINE=[
   {t:'Follow up every no-answer from the queue (text, iPhone-style)',tag:'Follow-up'},
   {t:'Log every deal in Money. Ask every closed client for a testimonial',tag:'Money'},
   {t:'Pull tomorrow\u2019s call list. Mondays: batch-film 7 reels',tag:'Setup'},
+];
+const SCHEDULE=[
+ [7.0,7.5,'Launch sequence','Coffee, open this app. Review pipeline, pull today\u2019s call list, pick 5 hot leads.','Setup',''],
+ [7.5,8.0,'Post today\u2019s reel','Drop the scheduled reel (or copy a prompt from Video Studio). Reply to every comment.','1 reel posted','content'],
+ [8.0,10.0,'CALL BLOCK 1','Prime pickup hours. Dial hard, Voss tone, lead with the free audit. Tap dials + connects as you go.','~25 calls','call'],
+ [10.0,10.25,'Reset','Stand up, water, walk. 15 min. Protect the back half of the day.','Break','break'],
+ [10.25,12.0,'CALL BLOCK 2','Keep dialing. Every no-answer \u2192 drop into the follow-up queue immediately.','~25 calls','call'],
+ [12.0,13.0,'Lunch + DMs','Eat. Then run inbound: every "AUDIT" comment \u2192 DM \u2192 send a free audit video. Calls won\u2019t connect now anyway.','10 DMs','dm'],
+ [13.0,15.0,'CALL BLOCK 3','Afternoon pickup window. Last big push of live dials. Book the calls, close what\u2019s warm.','~15 calls','call'],
+ [15.0,16.5,'Free audits','Screen-record audits for everyone who asked. 2\u20133 min each, point out 3 fixes, send. This is your wedge.','5 audits','audit'],
+ [16.5,17.0,'Reset','Step away. Eat something. 30 min.','Break','break'],
+ [17.0,19.0,'Follow-up power hour + DMs','Work the entire follow-up queue \u2014 texts, iPhone-style. Then outbound DMs to new prospects.','40 follow-ups','dm'],
+ [19.0,20.5,'Client delivery','Open Clients tab. Do this week\u2019s SEO steps for active clients. Copy the emails/prompts, send updates.','Move 1 client forward','client'],
+ [20.5,22.0,'Build + batch','Build any sold sites. Mondays: batch-film all 7 reels for the week. Log every deal in Money.','Ship work','content'],
 ];
 const VIDEOS=[
  ['Claim your profile','Most owners never verified their Google Business Profile \u2014 so it\u2019s invisible. Show how to claim it in 2 min.'],
@@ -557,7 +599,7 @@ function rollover(){
 function renderAll(){
   document.getElementById('today').textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
   document.getElementById('streak').textContent=S.streak;
-  renderReps(); renderRoutine(); renderRatio(); renderFollow(); renderBoard(); renderVideos(); renderClients(); renderMoney(); renderPlaybook(); renderGoal();
+  renderReps(); renderRoutine(); renderSchedule(); renderRatio(); renderFollow(); renderBoard(); renderVideos(); renderClients(); renderMoney(); renderPlaybook(); renderGoal();
 }
 
 function renderReps(){
@@ -601,6 +643,35 @@ function bumpRatio(k,n){
   if(k==='closes'&&n>0){ S.reps.calls=S.reps.calls; toast('Close logged \u2014 log the deal in Money 💰'); }
   save(); renderRatio();
 }
+// battle plan
+function fmtHour(h){
+  const hr=Math.floor(h), mn=Math.round((h-hr)*60);
+  const ap=hr>=12?'PM':'AM'; let hh=hr%12; if(hh===0)hh=12;
+  return hh+(mn?':'+String(mn).padStart(2,'0'):'')+ap;
+}
+function renderSchedule(){
+  const el=document.getElementById('schedule'); if(!el)return;
+  const now=new Date(); const h=now.getHours()+now.getMinutes()/60;
+  let cur=null;
+  el.innerHTML='';
+  SCHEDULE.forEach(b=>{
+    const[start,end,act,desc,goal,kind]=b;
+    const isNow=h>=start&&h<end, isPast=h>=end;
+    if(isNow)cur=act;
+    const d=document.createElement('div');
+    d.className='blk'+(isNow?' now':'')+(isPast?' past':'')+(kind==='break'?' brk':'');
+    d.innerHTML=`<div class="btime"><div class="bt1">${fmtHour(start)}</div><div class="bt2">to ${fmtHour(end)}</div></div>
+      <div class="bmain"><div class="bact">${isNow?'<span class="nowtag">NOW</span>':''}${esc(act)}</div>
+      <div class="bdesc">${esc(desc)}</div><span class="bgoal">${esc(goal)}</span></div>`;
+    el.appendChild(d);
+  });
+  const bnow=document.getElementById('bnow');
+  if(h<7) bnow.textContent='Day starts 7:00AM \u2014 rest up.';
+  else if(h>=22) bnow.textContent='Day\u2019s done. Log it, sleep, repeat.';
+  else bnow.textContent=cur?('Right now: '+cur):'Between blocks \u2014 keep moving.';
+  document.getElementById('bclock').textContent=now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+}
+
 function renderRatio(){
   const dials=S.reps.calls||0, conn=S.ratio.connects||0, close=S.ratio.closes||0;
   document.getElementById('rDials').textContent=dials;
@@ -893,4 +964,5 @@ document.querySelectorAll('.tab').forEach(t=>{
 });
 
 load();
+setInterval(()=>{ try{ renderSchedule(); }catch(e){} }, 30000);
 </script>
