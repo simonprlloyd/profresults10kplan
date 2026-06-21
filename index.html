@@ -185,6 +185,33 @@
   .assets button:hover{border-color:var(--green-dim)}
   .assets button.email{color:var(--blue)}
   .assets button.prompt{color:var(--green)}
+  /* ratio tracker */
+  .ratiowrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:15px 16px;margin-top:14px}
+  .ratiohead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .ratiohead h3{font-size:16px;text-transform:uppercase}
+  .ratiohead span{font-size:11px;color:var(--muted)}
+  .ratios{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .ratiocell{background:var(--surface2);border:1px solid var(--line);border-radius:11px;padding:12px 10px;text-align:center}
+  .ratiocell.tap{cursor:pointer;user-select:none}
+  .ratiocell.tap:active{transform:scale(.97)}
+  .ratiocell .rlab{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted)}
+  .ratiocell .rval{font-family:"Saira Condensed";font-weight:800;font-size:32px;line-height:1;margin:4px 0}
+  .ratiocell .rval.green{color:var(--green)}
+  .ratiocell .rsub{font-size:10.5px;color:var(--dim);line-height:1.3}
+  .ratiomsg{margin-top:12px;font-size:12.5px;color:var(--amber);font-weight:600;line-height:1.5;min-height:1px}
+  /* follow-up queue */
+  .fitem{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:11px 13px;margin-bottom:8px}
+  .fitem.overdue{border-color:var(--red)}
+  .fitem .fdot{width:9px;height:9px;border-radius:50%;background:var(--amber);flex:none}
+  .fitem.overdue .fdot{background:var(--red)}
+  .fitem .fmain{flex:1;min-width:0}
+  .fitem .fnm{font-weight:600;font-size:14px}
+  .fitem .fnote{font-size:12px;color:var(--muted);margin-top:1px}
+  .fitem .fage{font-size:11px;color:var(--dim);flex:none}
+  .fitem .fbtns{display:flex;gap:6px;flex:none}
+  .fitem .fbtns button{border:1px solid var(--line);background:var(--surface2);color:var(--txt);border-radius:8px;padding:7px 10px;font-size:12px;font-weight:600;cursor:pointer}
+  .fitem .fbtns .didit{background:var(--green);color:#04130c;border-color:var(--green)}
+  .fitem .fbtns .x{color:var(--dim)}
   @media(max-width:680px){
     .addlead,.logdeal{grid-template-columns:1fr 1fr}
     .goalrow .big{font-size:34px}
@@ -228,6 +255,16 @@
     <div class="msg" id="scoreMsg">Hit your reps. Money loves motion.</div>
   </div>
   <div class="reps" id="reps"></div>
+
+  <div class="ratiowrap" id="ratiowrap">
+    <div class="ratiohead"><h3>Conversion math</h3><span>Today · tells you if it's a volume problem or a pitch problem</span></div>
+    <div class="ratios">
+      <div class="ratiocell"><div class="rlab">Dials</div><div class="rval" id="rDials">0</div><div class="rsub">cold calls today</div></div>
+      <div class="ratiocell tap" onclick="bumpRatio('connects',1)" oncontextmenu="event.preventDefault();bumpRatio('connects',-1)"><div class="rlab">Connects</div><div class="rval" id="rConn">0</div><div class="rsub" id="rConnPct">tap when someone answers</div></div>
+      <div class="ratiocell tap" onclick="bumpRatio('closes',1)" oncontextmenu="event.preventDefault();bumpRatio('closes',-1)"><div class="rlab">Closes</div><div class="rval green" id="rClose">0</div><div class="rsub" id="rClosePct">tap when one says yes</div></div>
+    </div>
+    <div class="ratiomsg" id="ratiomsg"></div>
+  </div>
   <div class="sech" style="margin-top:22px"><div><h2>Daily routine</h2><p>Same order every day. Check it off.</p></div>
     <button class="btn ghost" onclick="resetDay()">Reset day</button></div>
   <div class="routine" id="routine"></div>
@@ -243,6 +280,15 @@
     <button class="btn" onclick="addLead()">+ Add lead</button>
   </div>
   <div class="board" id="board"></div>
+
+  <div class="sech" style="margin-top:26px"><div><h2>Follow-up queue</h2><p>Every no-answer lands here so nothing slips. Most deals close on touch 3\u20135.</p></div></div>
+  <div class="addlead" style="grid-template-columns:1fr 1fr 1fr auto">
+    <input id="fName" placeholder="Who">
+    <input id="fBiz" placeholder="Business (optional)">
+    <input id="fNote" placeholder="Note (called Tue, left VM\u2026)">
+    <button class="btn" onclick="addFollow()">+ Queue</button>
+  </div>
+  <div id="followList"></div>
 </section>
 
 <!-- VIDEO STUDIO -->
@@ -310,9 +356,9 @@
 // ---------- TARGETS (big numbers on purpose) ----------
 const REP_DEFS=[
   {k:'calls',name:'Cold calls',tgt:60},
-  {k:'dms',name:'DMs sent',tgt:25},
+  {k:'dms',name:'DMs sent',tgt:50},
   {k:'audits',name:'Free audits',tgt:5},
-  {k:'follow',name:'Follow-ups',tgt:20},
+  {k:'follow',name:'Follow-ups',tgt:40},
   {k:'reels',name:'Reels posted',tgt:1},
 ];
 const ROUTINE=[
@@ -320,7 +366,7 @@ const ROUTINE=[
   {t:'Send / schedule today\u2019s reel from Video Studio',tag:'Content'},
   {t:'Run all "AUDIT" comments \u2192 DM \u2192 send free audit video',tag:'Inbound'},
   {t:'60 cold calls \u2014 Voss tone, lead with the audit offer',tag:'Outbound'},
-  {t:'Follow up everyone who didn\u2019t answer (text, iPhone-style)',tag:'Follow-up'},
+  {t:'Follow up every no-answer from the queue (text, iPhone-style)',tag:'Follow-up'},
   {t:'Log every deal in Money. Ask every closed client for a testimonial',tag:'Money'},
   {t:'Pull tomorrow\u2019s call list. Mondays: batch-film 7 reels',tag:'Setup'},
 ];
@@ -474,7 +520,7 @@ const PROMPTS={
 };
 
 // ---------- STATE ----------
-const DEFAULT={date:'',streak:0,reps:{},routine:[],leads:[],deals:[],posted:[],clients:[],openClient:null};
+const DEFAULT={date:'',streak:0,reps:{},routine:[],leads:[],deals:[],posted:[],clients:[],openClient:null,ratio:{connects:0,closes:0},followups:[]};
 let S=JSON.parse(JSON.stringify(DEFAULT));
 let mem=null; // fallback store
 
@@ -499,9 +545,11 @@ function rollover(){
     const had=Object.values(S.reps||{}).some(v=>v>0);
     if(S.date==='') S.streak=0;
     else S.streak = had ? (S.streak+1) : 0;
-    S.date=t; S.reps={}; S.routine=[];
+    S.date=t; S.reps={}; S.routine=[]; S.ratio={connects:0,closes:0};
   }
   REP_DEFS.forEach(r=>{ if(S.reps[r.k]==null) S.reps[r.k]=0; });
+  if(!S.ratio) S.ratio={connects:0,closes:0};
+  if(!S.followups) S.followups=[];
   if(!S.routine.length) S.routine=ROUTINE.map(()=>false);
 }
 
@@ -509,7 +557,7 @@ function rollover(){
 function renderAll(){
   document.getElementById('today').textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
   document.getElementById('streak').textContent=S.streak;
-  renderReps(); renderRoutine(); renderBoard(); renderVideos(); renderClients(); renderMoney(); renderPlaybook(); renderGoal();
+  renderReps(); renderRoutine(); renderRatio(); renderFollow(); renderBoard(); renderVideos(); renderClients(); renderMoney(); renderPlaybook(); renderGoal();
 }
 
 function renderReps(){
@@ -533,7 +581,7 @@ function renderScore(){
   const m=document.getElementById('scoreMsg');
   m.textContent = pct>=100?'Full send. This is a 10K month being built.':pct>=60?'Strong. Don\u2019t coast \u2014 finish the reps.':pct>=30?'Warming up. Stack more calls.':'Hit your reps. Money loves motion.';
 }
-function bump(k,n){ S.reps[k]=Math.max(0,(S.reps[k]||0)+n); save(); renderReps(); }
+function bump(k,n){ S.reps[k]=Math.max(0,(S.reps[k]||0)+n); save(); renderReps(); if(k==='calls')renderRatio(); }
 
 function renderRoutine(){
   const el=document.getElementById('routine'); el.innerHTML='';
@@ -545,7 +593,59 @@ function renderRoutine(){
     el.appendChild(d);
   });
 }
-function resetDay(){ S.routine=ROUTINE.map(()=>false); REP_DEFS.forEach(r=>S.reps[r.k]=0); save(); renderReps(); renderRoutine(); toast('Day reset'); }
+function resetDay(){ S.routine=ROUTINE.map(()=>false); REP_DEFS.forEach(r=>S.reps[r.k]=0); S.ratio={connects:0,closes:0}; save(); renderReps(); renderRoutine(); renderRatio(); toast('Day reset'); }
+
+// ratio tracker
+function bumpRatio(k,n){
+  S.ratio[k]=Math.max(0,(S.ratio[k]||0)+n);
+  if(k==='closes'&&n>0){ S.reps.calls=S.reps.calls; toast('Close logged \u2014 log the deal in Money 💰'); }
+  save(); renderRatio();
+}
+function renderRatio(){
+  const dials=S.reps.calls||0, conn=S.ratio.connects||0, close=S.ratio.closes||0;
+  document.getElementById('rDials').textContent=dials;
+  document.getElementById('rConn').textContent=conn;
+  document.getElementById('rClose').textContent=close;
+  document.getElementById('rConnPct').textContent = dials?Math.round(conn/dials*100)+'% pickup':'tap when someone answers';
+  document.getElementById('rClosePct').textContent = conn?Math.round(close/conn*100)+'% of connects':'tap when one says yes';
+  const m=document.getElementById('ratiomsg');
+  if(dials<15){ m.textContent='Log a full block of dials before reading the ratio \u2014 small numbers lie.'; return; }
+  const pickup=conn/dials, closeRate=conn?close/conn:0;
+  if(pickup<0.15){ m.textContent='Pickup is low \u2014 it\u2019s a list/timing problem, not you. Call earlier, try mobiles, clean the list.'; }
+  else if(close<1 && conn>=8){ m.textContent='You\u2019re reaching people but not closing \u2014 it\u2019s the pitch. Open Playbook, tighten the offer + Voss opener.'; }
+  else if(closeRate>=0.1){ m.textContent='Strong close rate. This is a volume game now \u2014 the only lever is more dials + more follow-ups.'; }
+  else { m.textContent='On track. Keep the connects coming and feed every no-answer to the follow-up queue.'; }
+}
+
+// follow-up queue
+function addFollow(){
+  const name=val('fName'), biz=val('fBiz'), note=val('fNote');
+  if(!name){toast('Add who to follow up');return;}
+  S.followups.push({id:Date.now(),name,biz,note,added:Date.now()});
+  ['fName','fBiz','fNote'].forEach(i=>document.getElementById(i).value='');
+  save(); renderFollow(); toast('Queued');
+}
+function didFollow(id){
+  S.followups=S.followups.filter(x=>x.id!==id);
+  S.reps.follow=(S.reps.follow||0)+1;
+  save(); renderFollow(); renderReps(); toast('Followed up \u2014 +1 rep');
+}
+function dropFollow(id){ S.followups=S.followups.filter(x=>x.id!==id); save(); renderFollow(); }
+function renderFollow(){
+  const el=document.getElementById('followList'); if(!el)return; el.innerHTML='';
+  if(!S.followups.length){ el.innerHTML='<div class="empty">Nothing queued. Every no-answer goes here \u2014 that\u2019s where the money hides.</div>'; return; }
+  const now=Date.now();
+  [...S.followups].sort((a,b)=>a.added-b.added).forEach(f=>{
+    const days=Math.floor((now-f.added)/86400000);
+    const overdue=days>=2;
+    const age=days<=0?'today':days===1?'1 day':days+' days';
+    const row=document.createElement('div'); row.className='fitem'+(overdue?' overdue':'');
+    row.innerHTML=`<div class="fdot"></div><div class="fmain"><div class="fnm">${esc(f.name)}${f.biz?' · '+esc(f.biz):''}</div>${f.note?'<div class="fnote">'+esc(f.note)+'</div>':''}</div>
+      <div class="fage">${age}</div>
+      <div class="fbtns"><button class="didit" onclick="didFollow(${f.id})">Followed up</button><button class="x" onclick="dropFollow(${f.id})">✕</button></div>`;
+    el.appendChild(row);
+  });
+}
 
 // pipeline
 const STAGES=[['lead','New leads'],['audit','Audit sent'],['call','Call booked'],['closed_site','Closed · site'],['closed_ret','Closed · retainer']];
