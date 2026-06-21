@@ -562,7 +562,7 @@ const PROMPTS={
 };
 
 // ---------- STATE ----------
-const DEFAULT={date:'',streak:0,reps:{},routine:[],leads:[],deals:[],posted:[],clients:[],openClient:null,ratio:{connects:0,closes:0},followups:[]};
+const DEFAULT={date:'',startDay:null,streak:0,reps:{},routine:[],leads:[],deals:[],posted:[],clients:[],openClient:null,ratio:{connects:0,closes:0},followups:[]};
 let S=JSON.parse(JSON.stringify(DEFAULT));
 let mem=null; // fallback store
 
@@ -582,10 +582,13 @@ function monthStr(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+
 
 function rollover(){
   const t=todayStr();
+  // First ever open = setup only. Today does NOT count; tracking starts the next calendar day.
+  if(S.startDay==null){ S.startDay=t; }
+  const isSetupDay = (t===S.startDay);
   if(S.date!==t){
-    // streak: if yesterday had any reps, keep streak +1, else reset
     const had=Object.values(S.reps||{}).some(v=>v>0);
     if(S.date==='') S.streak=0;
+    else if(isSetupDay) S.streak=0;            // shouldn't happen, but keep setup day at 0
     else S.streak = had ? (S.streak+1) : 0;
     S.date=t; S.reps={}; S.routine=[]; S.ratio={connects:0,closes:0};
   }
@@ -644,6 +647,15 @@ function bumpRatio(k,n){
   save(); renderRatio();
 }
 // battle plan
+function centralNow(){
+  // returns {h: decimal hour, label: clock string} in America/Chicago regardless of device
+  const f=new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit',hour12:true});
+  const parts=f.formatToParts(new Date());
+  let hr=0,mn=0,ap='AM';
+  parts.forEach(p=>{ if(p.type==='hour')hr=+p.value; if(p.type==='minute')mn=+p.value; if(p.type==='dayPeriod')ap=p.value.toUpperCase(); });
+  let h24=hr%12; if(ap.indexOf('P')===0)h24+=12;
+  return {h:h24+mn/60, label:hr+':'+String(mn).padStart(2,'0')+ap+' CT'};
+}
 function fmtHour(h){
   const hr=Math.floor(h), mn=Math.round((h-hr)*60);
   const ap=hr>=12?'PM':'AM'; let hh=hr%12; if(hh===0)hh=12;
@@ -651,7 +663,7 @@ function fmtHour(h){
 }
 function renderSchedule(){
   const el=document.getElementById('schedule'); if(!el)return;
-  const now=new Date(); const h=now.getHours()+now.getMinutes()/60;
+  const C=centralNow(); const h=C.h;
   let cur=null;
   el.innerHTML='';
   SCHEDULE.forEach(b=>{
@@ -666,10 +678,12 @@ function renderSchedule(){
     el.appendChild(d);
   });
   const bnow=document.getElementById('bnow');
-  if(h<7) bnow.textContent='Day starts 7:00AM \u2014 rest up.';
+  const isSetup = (S.startDay===todayStr());
+  if(isSetup) bnow.textContent='Setup mode \u2014 today doesn\u2019t count. Go live tomorrow 7:00AM CT. 🏁';
+  else if(h<7) bnow.textContent='Day starts 7:00AM CT \u2014 rest up.';
   else if(h>=22) bnow.textContent='Day\u2019s done. Log it, sleep, repeat.';
   else bnow.textContent=cur?('Right now: '+cur):'Between blocks \u2014 keep moving.';
-  document.getElementById('bclock').textContent=now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+  document.getElementById('bclock').textContent=C.label;
 }
 
 function renderRatio(){
