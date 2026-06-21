@@ -1,0 +1,796 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ProfResults Command Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0E14; --surface:#141A24; --surface2:#1B2330; --line:#27313F;
+    --txt:#E8EDF2; --muted:#8A94A6; --dim:#5A6577;
+    --green:#00E08A; --green-dim:#0c8a5c; --amber:#FFB020; --red:#FF5A5F; --blue:#4DA3FF;
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--txt);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  body{padding:0 0 90px}
+  ::-webkit-scrollbar{width:9px;height:9px}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:9px}
+  h1,h2,h3,.disp{font-family:"Saira Condensed",sans-serif;letter-spacing:.4px;margin:0}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 16px}
+  /* top bar */
+  .top{position:sticky;top:0;z-index:30;background:linear-gradient(180deg,#0B0E14 70%,rgba(11,14,20,.0));padding:14px 0 8px}
+  .topin{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .brand{display:flex;align-items:baseline;gap:9px}
+  .brand b{font-family:"Saira Condensed";font-weight:800;font-size:24px;letter-spacing:.5px;text-transform:uppercase}
+  .brand .dot{color:var(--green)}
+  .brand span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:2px}
+  .streak{display:flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--line);padding:7px 13px;border-radius:999px;font-weight:700;font-size:14px}
+  .streak b{font-family:"Saira Condensed";font-size:19px;color:var(--amber)}
+  /* goal bar */
+  .goalcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;margin-top:12px;position:relative;overflow:hidden}
+  .goalcard::after{content:"";position:absolute;inset:0;background:radial-gradient(700px 120px at 0% 0%,rgba(0,224,138,.10),transparent)}
+  .goalrow{display:flex;align-items:flex-end;justify-content:space-between;position:relative;z-index:1;flex-wrap:wrap;gap:8px}
+  .goalrow .lab{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--muted)}
+  .goalrow .big{font-family:"Saira Condensed";font-weight:800;font-size:42px;line-height:.9}
+  .goalrow .big small{font-size:20px;color:var(--muted);font-weight:600}
+  .goalrow .of{font-family:"Saira Condensed";font-size:26px;color:var(--dim);font-weight:700}
+  .bar{height:12px;border-radius:999px;background:var(--surface2);margin-top:13px;overflow:hidden;position:relative;z-index:1}
+  .bar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--green-dim),var(--green));transition:width .5s cubic-bezier(.2,.8,.2,1)}
+  .splits{display:flex;gap:18px;margin-top:11px;position:relative;z-index:1;flex-wrap:wrap}
+  .splits div{font-size:12px;color:var(--muted)}
+  .splits b{font-family:"Saira Condensed";font-size:17px;color:var(--txt);margin-right:5px}
+  /* tabs */
+  .tabs{display:flex;gap:6px;position:fixed;bottom:0;left:0;right:0;z-index:40;background:rgba(11,14,20,.92);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:8px 10px;justify-content:center}
+  .tab{flex:1;max-width:170px;text-align:center;padding:9px 4px;border-radius:11px;color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;cursor:pointer;border:1px solid transparent;display:flex;flex-direction:column;align-items:center;gap:3px}
+  .tab svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2}
+  .tab.on{color:var(--green);background:var(--surface);border-color:var(--line)}
+  /* sections */
+  section{display:none;padding-top:18px}
+  section.on{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .sech{display:flex;align-items:center;justify-content:space-between;margin:4px 0 14px}
+  .sech h2{font-size:22px;font-weight:700;text-transform:uppercase}
+  .sech p{color:var(--muted);font-size:13px;margin:2px 0 0}
+  /* rep counters */
+  .reps{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px}
+  .rep{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;text-align:center;position:relative}
+  .rep .name{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted)}
+  .rep .num{font-family:"Saira Condensed";font-weight:800;font-size:38px;line-height:1;margin:6px 0 2px}
+  .rep .num.done{color:var(--green)}
+  .rep .tgt{font-size:12px;color:var(--dim);font-weight:600}
+  .rep .ctrls{display:flex;gap:8px;justify-content:center;margin-top:10px}
+  .rep button{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--surface2);color:var(--txt);font-size:20px;font-weight:700;cursor:pointer;line-height:1}
+  .rep button:active{transform:scale(.94)}
+  .rep button.plus{background:var(--green);color:#04130c;border-color:var(--green)}
+  .rep .minibar{height:5px;border-radius:99px;background:var(--surface2);margin-top:11px;overflow:hidden}
+  .rep .minibar i{display:block;height:100%;background:var(--green);transition:width .4s}
+  .scorecard{background:linear-gradient(135deg,var(--surface),var(--surface2));border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .scorecard .l{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--muted)}
+  .scorecard .v{font-family:"Saira Condensed";font-weight:800;font-size:40px;line-height:.9}
+  .scorecard .msg{font-size:13px;color:var(--amber);font-weight:600;max-width:260px;text-align:right}
+  /* routine checklist */
+  .routine{margin-top:18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:6px 4px}
+  .chk{display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;border-bottom:1px solid var(--line)}
+  .chk:last-child{border-bottom:none}
+  .chk .box{width:22px;height:22px;border-radius:7px;border:2px solid var(--dim);flex:none;display:flex;align-items:center;justify-content:center;transition:.15s}
+  .chk .box svg{width:13px;height:13px;stroke:#04130c;stroke-width:3.5;fill:none;opacity:0}
+  .chk.done .box{background:var(--green);border-color:var(--green)}
+  .chk.done .box svg{opacity:1}
+  .chk .t{font-size:14px}
+  .chk.done .t{color:var(--dim);text-decoration:line-through}
+  .chk .tag{margin-left:auto;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:6px}
+  /* pipeline */
+  .board{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:11px;align-items:start}
+  .col{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:11px;min-height:90px}
+  .col h3{font-size:13px;text-transform:uppercase;letter-spacing:1px;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;color:var(--muted)}
+  .col h3 b{font-family:"Saira Condensed";font-size:17px;color:var(--txt)}
+  .col[data-k="closed_ret"] h3{color:var(--green)}
+  .card{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:10px 11px;margin-bottom:8px}
+  .card .nm{font-weight:600;font-size:14px}
+  .card .sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .card .mv{display:flex;gap:6px;margin-top:9px}
+  .card .mv button{flex:1;font-size:11px;padding:6px;border-radius:7px;border:1px solid var(--line);background:var(--surface);color:var(--muted);cursor:pointer;font-weight:600}
+  .card .mv button.go{background:var(--green-dim);color:#eafff5;border-color:transparent}
+  .card .mv button.x{flex:none;width:30px;color:var(--red)}
+  .addlead{background:var(--surface);border:1px dashed var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px;display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:9px}
+  .addlead input,.addlead select{background:var(--surface2);border:1px solid var(--line);border-radius:9px;padding:10px 11px;color:var(--txt);font-size:13px;font-family:inherit}
+  .addlead input::placeholder{color:var(--dim)}
+  .btn{background:var(--green);color:#04130c;border:none;border-radius:9px;padding:10px 16px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap}
+  .btn:active{transform:scale(.97)}
+  .btn.ghost{background:var(--surface2);color:var(--txt);border:1px solid var(--line)}
+  /* video studio */
+  .vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:11px}
+  .vcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:8px;position:relative}
+  .vcard.posted{opacity:.55}
+  .vcard .nidx{font-family:"Saira Condensed";font-weight:800;font-size:13px;color:var(--green-dim)}
+  .vcard .vt{font-weight:700;font-size:15px;line-height:1.15}
+  .vcard .vh{font-size:12.5px;color:var(--muted);line-height:1.4;flex:1}
+  .vcard .vb{display:flex;gap:7px;margin-top:4px}
+  .vcard .vb button{flex:1;font-size:12px;padding:9px;border-radius:9px;border:1px solid var(--line);background:var(--surface2);color:var(--txt);cursor:pointer;font-weight:600}
+  .vcard .vb .copy{background:var(--green);color:#04130c;border-color:var(--green)}
+  .vcard .pill{position:absolute;top:10px;right:10px;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--green);font-weight:700}
+  .howto{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--green);border-radius:10px;padding:13px 15px;margin-bottom:14px;font-size:13px;color:var(--muted);line-height:1.55}
+  .howto b{color:var(--txt)}
+  /* money */
+  .logdeal{background:var(--surface);border:1px dashed var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px;display:grid;grid-template-columns:1fr 1.2fr 1fr auto;gap:9px}
+  .logdeal input,.logdeal select{background:var(--surface2);border:1px solid var(--line);border-radius:9px;padding:10px 11px;color:var(--txt);font-size:13px;font-family:inherit}
+  .mcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin-bottom:16px}
+  .mc{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:15px}
+  .mc .l{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted)}
+  .mc .v{font-family:"Saira Condensed";font-weight:800;font-size:34px;margin-top:4px}
+  .mc.green .v{color:var(--green)}
+  .mc.amber .v{color:var(--amber)}
+  .deal{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:11px 14px;margin-bottom:8px}
+  .deal .tp{font-size:10px;text-transform:uppercase;letter-spacing:1px;padding:3px 8px;border-radius:6px;font-weight:700;flex:none}
+  .deal .tp.site{background:rgba(77,163,255,.15);color:var(--blue)}
+  .deal .tp.ret{background:rgba(0,224,138,.15);color:var(--green)}
+  .deal .tp.other{background:var(--surface2);color:var(--muted)}
+  .deal .dn{font-weight:600;font-size:14px}
+  .deal .ds{font-size:12px;color:var(--muted)}
+  .deal .da{margin-left:auto;font-family:"Saira Condensed";font-weight:800;font-size:20px}
+  .deal .del{background:none;border:none;color:var(--dim);cursor:pointer;font-size:18px}
+  /* playbook */
+  .play{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:6px 0;margin-bottom:12px;overflow:hidden}
+  .pq{padding:15px 18px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:15px;font-family:"Saira Condensed";letter-spacing:.5px;text-transform:uppercase}
+  .pq .ch{color:var(--green);transition:.2s;font-size:20px}
+  .pa{padding:0 18px;max-height:0;overflow:hidden;transition:max-height .3s ease;color:var(--muted);font-size:13.5px;line-height:1.6}
+  .pa .inner{padding:0 0 16px}
+  .pa ol,.pa ul{margin:6px 0;padding-left:20px}
+  .pa li{margin:5px 0}
+  .pa b{color:var(--txt)}
+  .pa code{background:var(--surface2);padding:2px 6px;border-radius:5px;font-size:12px;color:var(--green)}
+  .open .pa{max-height:760px}
+  .open .pq .ch{transform:rotate(45deg)}
+  .empty{color:var(--dim);font-size:13px;text-align:center;padding:20px}
+  .toast{position:fixed;bottom:96px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--green);color:#04130c;padding:11px 20px;border-radius:999px;font-weight:700;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:60}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  /* clients */
+  .clientcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;gap:14px}
+  .clientcard:hover{border-color:var(--green-dim)}
+  .clientcard .cn{font-weight:700;font-size:16px}
+  .clientcard .cc{font-size:12px;color:var(--muted);margin-top:2px}
+  .clientcard .cprog{margin-left:auto;text-align:right;flex:none}
+  .clientcard .cring{font-family:"Saira Condensed";font-weight:800;font-size:22px;color:var(--green)}
+  .clientcard .cwk{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+  .clientcard .cbar{width:90px;height:6px;border-radius:99px;background:var(--surface2);margin-top:6px;overflow:hidden}
+  .clientcard .cbar i{display:block;height:100%;background:var(--green)}
+  .clientcard .cdel{background:none;border:none;color:var(--dim);font-size:17px;cursor:pointer;flex:none}
+  .backbtn{background:var(--surface2);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:8px 14px;font-weight:600;font-size:13px;cursor:pointer;margin-bottom:14px}
+  .cdhead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+  .cdhead .cdn{font-family:"Saira Condensed";font-weight:800;font-size:26px;text-transform:uppercase}
+  .cdhead .cds{font-size:13px;color:var(--muted)}
+  .week{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);margin-bottom:10px;overflow:hidden}
+  .week.wdone{border-color:var(--green-dim)}
+  .whead{padding:13px 16px;display:flex;align-items:center;gap:12px;cursor:pointer}
+  .wnum{font-family:"Saira Condensed";font-weight:800;font-size:13px;width:54px;flex:none;color:var(--green-dim)}
+  .week.wdone .wnum{color:var(--green)}
+  .wtitle{font-weight:700;font-size:15px;flex:1}
+  .wcount{font-size:12px;color:var(--muted);margin-right:6px}
+  .wch{color:var(--green);font-size:20px;transition:.2s}
+  .week.open .wch{transform:rotate(45deg)}
+  .wbody{max-height:0;overflow:hidden;transition:max-height .35s ease}
+  .week.open .wbody{max-height:2000px}
+  .winner{padding:0 16px 14px}
+  .step{display:flex;align-items:flex-start;gap:11px;padding:10px 0;border-top:1px solid var(--line);cursor:pointer}
+  .step .sbox{width:20px;height:20px;border-radius:6px;border:2px solid var(--dim);flex:none;margin-top:1px;display:flex;align-items:center;justify-content:center}
+  .step .sbox svg{width:12px;height:12px;stroke:#04130c;stroke-width:3.5;fill:none;opacity:0}
+  .step.sdone .sbox{background:var(--green);border-color:var(--green)}
+  .step.sdone .sbox svg{opacity:1}
+  .step .stx{font-size:13.5px;line-height:1.45}
+  .step.sdone .stx{color:var(--dim);text-decoration:line-through}
+  .step .adv{font-size:9px;background:var(--surface2);color:var(--amber);padding:1px 6px;border-radius:5px;text-transform:uppercase;letter-spacing:1px;margin-left:6px;vertical-align:middle}
+  .assets{margin-top:12px;display:flex;flex-wrap:wrap;gap:8px}
+  .assets button{background:var(--surface2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer}
+  .assets button:hover{border-color:var(--green-dim)}
+  .assets button.email{color:var(--blue)}
+  .assets button.prompt{color:var(--green)}
+  @media(max-width:680px){
+    .addlead,.logdeal{grid-template-columns:1fr 1fr}
+    .goalrow .big{font-size:34px}
+    .reps{grid-template-columns:repeat(2,1fr)}
+  }
+</style>
+
+<div class="top">
+  <div class="wrap">
+    <div class="topin">
+      <div class="brand"><b>Prof<span class="dot" style="font-size:24px">·</span>Results</b><span id="today"></span></div>
+      <div class="streak">🔥 <b id="streak">0</b> day streak</div>
+    </div>
+    <div class="goalcard">
+      <div class="goalrow">
+        <div>
+          <div class="lab">This month's revenue · road to 10K</div>
+          <div class="big">$<span id="gNow">0</span> <span class="of">/ $10,000</span></div>
+        </div>
+        <div style="text-align:right">
+          <div class="lab">to go</div>
+          <div class="big" style="font-size:30px;color:var(--amber)">$<span id="gLeft">10,000</span></div>
+        </div>
+      </div>
+      <div class="bar"><i id="gBar" style="width:0%"></i></div>
+      <div class="splits">
+        <div><b id="sMrr">$0</b>monthly retainers (MRR)</div>
+        <div><b id="sSites">$0</b>one-time this month</div>
+        <div><b id="sClients">0</b>active retainer clients</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<!-- TODAY -->
+<section id="s-today" class="on">
+  <div class="scorecard">
+    <div><div class="l">Today's action score</div><div class="v"><span id="score">0</span>%</div></div>
+    <div class="msg" id="scoreMsg">Hit your reps. Money loves motion.</div>
+  </div>
+  <div class="reps" id="reps"></div>
+  <div class="sech" style="margin-top:22px"><div><h2>Daily routine</h2><p>Same order every day. Check it off.</p></div>
+    <button class="btn ghost" onclick="resetDay()">Reset day</button></div>
+  <div class="routine" id="routine"></div>
+</section>
+
+<!-- PIPELINE -->
+<section id="s-pipe">
+  <div class="sech"><div><h2>Pipeline</h2><p>Every lead, every stage. Move them right until they pay.</p></div></div>
+  <div class="addlead">
+    <input id="lName" placeholder="Contact name">
+    <input id="lBiz" placeholder="Business name">
+    <select id="lSrc"><option value="">Source…</option><option>Reel / DM</option><option>Cold call</option><option>Referral</option><option>Walk-in</option></select>
+    <button class="btn" onclick="addLead()">+ Add lead</button>
+  </div>
+  <div class="board" id="board"></div>
+</section>
+
+<!-- VIDEO STUDIO -->
+<section id="s-vid">
+  <div class="sech"><div><h2>Video studio</h2><p id="vidCount">0 of 0 posted · pick one, copy the prompt, paste into Claude Design</p></div>
+    <button class="btn ghost" onclick="resetVids()">Reset all</button></div>
+  <div class="howto"><b>How this works:</b> Tap <b>Copy prompt</b> → open <b>Claude Design</b> (the canvas tool in this app) → paste → it builds the vertical reel. Download it, post to your ProfResults page. Tap <b>Posted</b> here to track it and bank an Action Score rep. Batch 7 on Mondays, schedule them out.</div>
+  <div class="vgrid" id="vgrid"></div>
+</section>
+
+<!-- CLIENTS -->
+<section id="s-clients">
+  <div class="sech"><div><h2>Clients</h2><p>Every active client running your 12-week process. Open one, do the step, check it.</p></div></div>
+  <div class="addlead" style="grid-template-columns:1fr 1fr auto">
+    <input id="cBiz" placeholder="Business name">
+    <input id="cContact" placeholder="Owner / contact">
+    <button class="btn" onclick="addClient()">+ Start client</button>
+  </div>
+  <div id="clientList"></div>
+  <div id="clientDetail" style="display:none"></div>
+</section>
+
+<!-- MONEY -->
+<section id="s-money">
+  <div class="sech"><div><h2>Money</h2><p>Log every dollar. Watch the bar fill.</p></div></div>
+  <div class="mcards">
+    <div class="mc green"><div class="l">Revenue this month</div><div class="v">$<span id="mTotal">0</span></div></div>
+    <div class="mc"><div class="l">MRR (recurring)</div><div class="v">$<span id="mMrr">0</span></div></div>
+    <div class="mc amber"><div class="l">Deals closed</div><div class="v" id="mCount">0</div></div>
+  </div>
+  <div class="logdeal">
+    <input id="dBiz" placeholder="Client / business">
+    <select id="dType">
+      <option value="site">Website — $425 one-time</option>
+      <option value="ret">Retainer — $400/mo recurring</option>
+      <option value="other">Other / custom</option>
+    </select>
+    <input id="dAmt" placeholder="Amount $" type="number" inputmode="numeric">
+    <button class="btn" onclick="addDeal()">+ Log deal</button>
+  </div>
+  <div id="deals"></div>
+</section>
+
+<!-- PLAYBOOK -->
+<section id="s-play">
+  <div class="sech"><div><h2>Playbook</h2><p>When you forget what to say — it's here.</p></div></div>
+  <div id="playbook"></div>
+</section>
+
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab on" data-go="today"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>Today</div>
+  <div class="tab" data-go="pipe"><svg viewBox="0 0 24 24"><path d="M3 3v18h18M7 14l4-4 4 4 5-5"/></svg>Pipeline</div>
+  <div class="tab" data-go="vid"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M10 9l5 3-5 3z"/></svg>Videos</div>
+  <div class="tab" data-go="clients"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 7a4 4 0 100 8 4 4 0 000-8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>Clients</div>
+  <div class="tab" data-go="money"><svg viewBox="0 0 24 24"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>Money</div>
+  <div class="tab" data-go="play"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2zM22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>Playbook</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ---------- TARGETS (big numbers on purpose) ----------
+const REP_DEFS=[
+  {k:'calls',name:'Cold calls',tgt:60},
+  {k:'dms',name:'DMs sent',tgt:25},
+  {k:'audits',name:'Free audits',tgt:5},
+  {k:'follow',name:'Follow-ups',tgt:20},
+  {k:'reels',name:'Reels posted',tgt:1},
+];
+const ROUTINE=[
+  {t:'Open the app, review pipeline, pick today\u2019s 5 hot leads',tag:'5 min'},
+  {t:'Send / schedule today\u2019s reel from Video Studio',tag:'Content'},
+  {t:'Run all "AUDIT" comments \u2192 DM \u2192 send free audit video',tag:'Inbound'},
+  {t:'60 cold calls \u2014 Voss tone, lead with the audit offer',tag:'Outbound'},
+  {t:'Follow up everyone who didn\u2019t answer (text, iPhone-style)',tag:'Follow-up'},
+  {t:'Log every deal in Money. Ask every closed client for a testimonial',tag:'Money'},
+  {t:'Pull tomorrow\u2019s call list. Mondays: batch-film 7 reels',tag:'Setup'},
+];
+const VIDEOS=[
+ ['Claim your profile','Most owners never verified their Google Business Profile \u2014 so it\u2019s invisible. Show how to claim it in 2 min.'],
+ ['Name, address, phone','One wrong phone number across the web tanks your ranking. The NAP consistency rule.'],
+ ['The map pack','Why 3 businesses show on the map and you don\u2019t \u2014 and how the 3-pack actually picks them.'],
+ ['Get more reviews','The exact text to send customers that gets a Google review every time.'],
+ ['Reply to reviews','Replying to every review (even 5-stars) is a ranking signal owners ignore.'],
+ ['Post photos weekly','Google rewards fresh photos. Post 3 job photos a week, watch ranking move.'],
+ ['Right category','Picking the wrong primary category kills you. How to find the one that wins.'],
+ ['Service area setup','Set your service area right or you vanish in the towns you actually work.'],
+ ['Google Posts','Free advertising sitting unused: weekly Google Posts on your profile.'],
+ ['Answer the Q&A','Competitors are seeding your Q&A. Own it before they do.'],
+ ['City in your title','If your homepage title doesn\u2019t say your city + service, you won\u2019t rank for it.'],
+ ['A page per service','One page listing 8 services ranks for none. Build a page for each.'],
+ ['A page per city','Want to rank in 5 towns? You need a page for each one.'],
+ ['Mobile + speed','80% of "near me" searches are mobile. A slow site loses the call.'],
+ ['Schema markup','The invisible code that tells Google exactly what your business is.'],
+ ['Click-to-call','The #1 mobile fix: a tap-to-call button above the fold.'],
+ ['Embed the map','Embedding your Google map on the site is a local trust signal.'],
+ ['Internal links','Link your pages to each other \u2014 free ranking, most sites skip it.'],
+ ['Local citations','Get listed on local directories with identical info. Compounding authority.'],
+ ['Keyword reviews','Reviews that mention the service + city rank you for that service + city.'],
+ ['Why they outrank you','Break down exactly why a competitor sits above you \u2014 and how to flip it.'],
+ ['A form that converts','Traffic means nothing if the form scares people off. The 3-field rule.'],
+ ['Before / after sells','Before-and-after content is the highest-converting local reel format.'],
+ ['Win "near me"','How to actually show up for "[service] near me" searches.'],
+ ['Update your hours','Wrong hours = lost trust + lost ranking. Holiday hours matter.'],
+ ['Track your calls','If you don\u2019t know where leads come from, you can\u2019t grow them.'],
+ ['How the 3-pack works','Plain-English breakdown of how Google ranks the local 3-pack.'],
+ ['One page won\u2019t rank','Why a single-page site can\u2019t compete \u2014 and what beats it.'],
+ ['The #1 GBP mistake','The single most common Google Business Profile mistake \u2014 and the fix.'],
+ ['Your phone should ring','Reframe: you\u2019re not buying SEO, you\u2019re buying a ringing phone. Sell the outcome.'],
+];
+const PLAYBOOK=[
+ ['The offer (say it like this)','<p><b>One yes, not two. The site is the setup fee for ranking \u2014 not a separate product.</b></p><ol><li>"I get you ranked on Google so your phone rings."</li><li>"Setup is <b>$425</b> \u2014 that\u2019s me building your optimized site + Google profile foundation. You own the domain."</li><li>"Then it\u2019s <b>$400/month</b> for the ongoing ranking work that keeps you on top \u2014 starts ~3 weeks after launch."</li><li>"If you\u2019re not in the map pack in 90 days, you stop paying." (you can promise this \u2014 most competitors never do the citation + service-list work, so you win by default)</li></ol><p>Sell the outcome (calls), not "SEO." One decision, outcome-framed, risk reversed = short sales cycle.</p>'],
+ ['DM flow (comment \u2192 client)','<ol><li>They comment <code>AUDIT</code> on a reel \u2192 reply publicly (boosts the reel).</li><li>DM: "Hey \u2014 saw you wanted the audit. What\u2019s your business name so I can pull up your Google profile?"</li><li>Screen-record a 2\u20133 min audit: point out <b>3 specific problems</b>.</li><li>Send it, then: "Want me to fix these for you?"</li></ol>'],
+ ['The free audit (your wedge)','<ul><li>Open their Google Business Profile live.</li><li>Call out: unverified? wrong category? few/no reviews? no photos? no website or a one-pager?</li><li>Screen-record yourself explaining 3 fixes \u2014 plain English, no jargon.</li><li>Value first. The sale becomes the obvious next step, not a pitch.</li></ul>'],
+ ['Cold call (Voss tone)','<ol><li>Calibrated opener: "Hey, I know you weren\u2019t expecting my call \u2014 can I have 30 seconds and you tell me to buzz off if it\u2019s useless?"</li><li>Label the problem: "Looks like you\u2019re not showing up when folks search [service] [city]."</li><li>Offer the free audit, not the sale: "Want me to send you a quick video showing why?"</li><li>Get the audit \u2192 then the website \u2192 then the retainer.</li></ol>'],
+ ['Weekly rhythm','<ul><li><b>Mon:</b> batch-film 7 reels, schedule them.</li><li><b>Tue\u2013Sun:</b> reels auto-post. 30 min/day in DMs running audits.</li><li><b>Daily:</b> 60 calls, follow up no-answers by text.</li><li><b>Every close:</b> ask for a testimonial \u2192 turn it into a proof reel \u2192 more leads. That\u2019s the flywheel.</li></ul>'],
+ ['Hit $10K \u2014 the math','<p>Two clean ways to get there in a month, mix as you like:</p><ul><li><b>Setups:</b> ~10 sites \u00d7 $425 \u2248 $4,250 one-time.</li><li><b>Retainers:</b> 15 clients \u00d7 $400 \u2248 $6,000 MRR.</li><li>Retainers are the real business \u2014 they stack every month. Setups fund the grind while MRR builds.</li><li>Target: close <b>1 setup + 1 retainer per day</b>. Log it in Money. The bar does the rest.</li></ul>'],
+];
+
+// ---------- 12-WEEK PROCESS (from the ProfResults doc) ----------
+// step: text, adv:true = Advanced (skippable on first run)
+const PROCESS=[
+ {wk:'Week 1',title:'Benchmark + obvious flaws',email:'benchmark',steps:[
+   'Get access to their website + GBP (onboarding email)',
+   'Run heatmap in Leadsnap on their main keyword \u2014 save as benchmark',
+   'Check top 10: review counts + photo counts. If client is behind, tell them to get reviews + photos',
+   'Scan for blackhat fakes in the pack (stuffed titles, fake addresses)',
+   'Site: google search \u2014 confirm how many pages are indexed (need 30+)',
+ ]},
+ {wk:'Week 2',title:'Pick keyword + start GBP',email:null,steps:[
+   'Choose the ONE main keyword to rank for (plumber + city, etc.)',
+   'Run the keyword in GMB Everywhere \u2014 local scan of top 20',
+   'Note avg # of categories in top 20 (usually ~2)',
+   'Business name: leave it unless every other option is exhausted',
+   'Set category: 1 main + 0\u20133 sub. Nuke overlapping/off-topic ones',
+ ]},
+ {wk:'Week 3',title:'Complete the GBP',email:'gbp_start',steps:[
+   'Get the profile circle fully green \u2014 full address, website, phone (3/5 min)',
+   'Link Contact Us under Bookings to hit 4/5 profile features',
+   'Build master services list (GMB Everywhere category tool or top-10 scrape)',
+   'Run the AI dedupe prompt on the services list',
+   'Add all services (max 99) under the right category',
+   'Write 300-char descriptions for the top 20 services (AI prompt) + paste in',
+   'Add FAQ to the profile (AI-generated, niche + city specific)',
+ ]},
+ {wk:'Week 4',title:'GBP recap to client',email:'gbp_recap',steps:[
+   'Send client the Week-4 overview email (what we did + what\u2019s next)',
+   'Ask client which listed services they DON\u2019T do (services email)',
+   'Confirm reviews + photos are coming in regularly',
+ ]},
+ {wk:'Week 5',title:'On-page SEO \u2014 basics',email:'onpage_basic',steps:[
+   'Title tag: BEST + category + city + business + primary services + near me (~200 chars)',
+   'H1 = primary category + city',
+   'H2 = secondary categories + most pertinent services',
+   'Add NAP in footer, consistent with GBP',
+   'Embed GBP map on homepage',
+   'Confirm NAP visible + matching on homepage / landing page',
+ ]},
+ {wk:'Week 6',title:'On-page \u2014 content inventory',email:'content_inventory',adv:true,steps:[
+   'Map what Google has indexed vs what\u2019s missing',
+   'Plan topical pages: one page per core service (1,000\u20132,000 words each)',
+   'Plan local pages: "Areas we serve" + one subpage per area',
+   'Add LocalBusiness schema (technicalseo.com generator)',
+ ]},
+ {wk:'Week 7',title:'On-page \u2014 content build',email:'content_completion',adv:true,steps:[
+   'Generate each service page with the topical-authority AI prompt',
+   'Generate each area page with the hyperlocal AI prompt',
+   'Populate pages with copy + images',
+   'Interlink: service\u2194area pages, 2\u20134 links each, varied anchor text, no footer dumping',
+   'Add "Areas we serve" + "Our main services" to home + contact',
+ ]},
+ {wk:'Week 8',title:'On-page recap to client',email:'gbp_recap',steps:[
+   'Send overview email \u2014 what\u2019s done, what\u2019s coming',
+   'Confirm all new pages are indexing (site: search)',
+ ]},
+ {wk:'Week 9',title:'Citations \u2014 the 80/20',email:'citations',steps:[
+   'Bing Places',
+   'Apple Business Connect',
+   'Yelp',
+   'Foursquare ($20) / Data Axle (US)',
+   'NAP identical across every citation',
+ ]},
+ {wk:'Week 10',title:'Citations \u2014 high-opportunity',email:null,adv:true,steps:[
+   'Check top-20 organic for your keyword \u2014 find directories you can list on',
+   'Repeat for 2\u20133 keyword variations',
+   'Pull competitor backlinks (GBP \u2192 More about \u2192 referring sites) and fill the voids',
+   'Optional: buy citations via Leadsnap/FatJoe once volume justifies it',
+ ]},
+ {wk:'Week 11',title:'Rankings overview',email:'rankings',steps:[
+   'Re-run the heatmap \u2014 compare against Week-1 benchmark',
+   'Send client the ranking progress',
+   'Confirm weekly posts + geotagged photos are running',
+ ]},
+ {wk:'Week 12',title:'Grand overview + retention call',email:'grand_overview',steps:[
+   'Full before/after overview (heatmap, pages, citations, reviews)',
+   'Prep + book the retention sales call',
+   'Lock in continued $400/mo + ask for a testimonial \u2192 proof reel',
+ ]},
+];
+const WEEKLY_STEPS=[ // ongoing once the 12 weeks run
+ 'Weekly update post on the site (AI draft, light edit, publish)',
+ 'Weekly geotagged photos (geosetter \u2014 tag service-area outskirts)',
+ 'Nudge client for fresh reviews',
+ 'Nudge client for new job photos',
+];
+// copy-paste assets
+const EMAILS={
+ benchmark:['Week 1 \u2014 Benchmarking','Hi [Name],\n\nKicking things off this week. I\u2019m benchmarking exactly where you currently rank on Google so we have a clear before-and-after as we improve things.\n\nI\u2019m mapping your top competitors, your reviews and photos vs theirs, and how many of your pages Google has indexed. This gives us our starting point.\n\nI\u2019ll be in touch with next steps shortly.\n\nThanks,\n[You]'],
+ gbp_start:['Week 3 \u2014 GBP optimization','Hi [Name],\n\nThis week we\u2019re building out your Google Business Profile \u2014 this is one of the biggest ranking factors.\n\nWe\u2019re setting your category correctly, completing every profile field, and adding a full list of your services so Google understands everything you do and shows you for more searches.\n\nQuick ask coming in a separate email: I\u2019ll send a list of services and just need you to tell me which ones you DON\u2019T do.\n\nThanks,\n[You]'],
+ services:['Service list check','Hi [Name],\n\nI\u2019m completing the services list for your Google Business Profile \u2014 it helps with ranking.\n\nCould you go over this list and let me know which services you guys DON\u2019T do?\n\n[PASTE SERVICE LIST HERE]\n\nThanks in advance,\n[You]'],
+ gbp_recap:['Overview \u2014 done + coming up','Hi [Name],\n\nQuick update on progress.\n\nHere\u2019s what we\u2019ve completed so far:\n- [bullet]\n- [bullet]\n\nAnd here\u2019s what\u2019s coming next:\n- [bullet]\n\nMost of this is background work \u2014 giving Google more to index so they get a clearer picture of what you do and where. I\u2019ll keep you posted.\n\nThanks,\n[You]'],
+ onpage_basic:['Week 5 \u2014 On-page SEO','Hi [Name],\n\nThis week we\u2019re optimizing the actual pages of your site \u2014 the titles, headings, and your name/address/phone \u2014 so Google clearly connects you to [city] + [service].\n\nMost businesses get this wrong, so it\u2019s usually where we pull ahead fast. Nothing changes visually for your customers; it\u2019s mostly under the hood.\n\nThanks,\n[You]'],
+ content_inventory:['Week 6 \u2014 Content structure','Hi [Name],\n\nUpdate on what\u2019s next.\n\nWe\u2019ve mapped out:\n1) what Google has currently indexed\n2) what content we\u2019ll add to increase topical relevance\n3) what content we\u2019ll add to increase local relevance\n\nMy team has started putting this content together so we can give the algorithm what it wants and solidify rankings. There\u2019ll be some changes on the site \u2014 nothing major, mostly background additions so Google gets a clearer view of what you do and where.\n\nWill keep you posted!\n\nThanks,\n[You]'],
+ content_completion:['Week 7 \u2014 Content live','Hi [Name],\n\nThe new service and area pages are going live this week. Each one is built to rank for a specific service or area you cover, and they\u2019re all linked together so Google sees the full picture of your business.\n\nThis is the kind of work most competitors never do \u2014 it\u2019s a big part of how we win.\n\nThanks,\n[You]'],
+ citations:['Week 9 \u2014 Citations','Hi [Name],\n\nThis week we\u2019re building your citations \u2014 getting your business listed consistently across the directories Google trusts (Bing, Apple, Yelp and more).\n\nI may need a quick hand verifying a couple of confirmation emails \u2014 I\u2019ll flag them as they come.\n\nThanks,\n[You]'],
+ rankings:['Week 11 \u2014 Ranking update','Hi [Name],\n\nWe\u2019re far enough in to see movement. I\u2019ve re-run the ranking map and compared it to where you started \u2014 sending the before/after over so you can see the progress.\n\nThanks,\n[You]'],
+ grand_overview:['Week 12 \u2014 Full overview','Hi [Name],\n\nWe\u2019ve hit the end of the first full cycle \u2014 here\u2019s the complete before-and-after: rankings, the pages we built, citations, and reviews.\n\nI\u2019d love to jump on a quick call to walk you through it and map out the next stretch. When works for you this week?\n\nThanks,\n[You]'],
+};
+const PROMPTS={
+ dedupe:['Dedupe service list','I\u2019m pasting a list of services from competitors.\n\nYour task:\n1. Remove all exact duplicates\n2. Remove all near-identical variants of the same term. Keep only ONE version of each \u2014 choose the most common or professional form, but do NOT edit or reword it beyond selecting one from the list.\n3. Do NOT add, remove, combine, rephrase, or limit characters in any way.\n4. Do NOT group, categorize, or format \u2014 just output the final clean list, one service per line, nothing else.\n\nList:\n[PASTE YOUR LIST HERE]'],
+ descriptions:['Top-20 service descriptions','I need a service description for each item in the top 20 services below. Each description must be 300 characters or less, professional, and specific to the service. Output one description per service, labeled.\n\n[PASTE TOP 20 SERVICES HERE]'],
+ servicepage:['Service page (1,800\u20132,500 words)','You are an experienced local SEO copywriter who specializes in [TYPE OF BUSINESS] businesses. You write engaging, trustworthy content that ranks well and actually gets read by real people.\n\nTask: Create a high-value services page (1,800\u20132,500 words) to build topical authority around the core topic: "[TOPIC \u2014 e.g. services our skincare clinic in CITY offers]".\n\nTarget audience: [TARGET AUDIENCE]\nSearch intent: Primarily informational with some commercial.\nPrimary keyword: "[PRIMARY KEYWORD]"\nSecondary keywords: [LIST IF ANY]\n\nInstructions:\n1. Start with a short summary of search intent and why this page beats competitors.\n2. Build a scannable H1\u2013H3 outline: intro \u2192 key concepts \u2192 local scene \u2192 recommendations \u2192 tips \u2192 FAQs.\n3. Show E-E-A-T: practical insights, real local entities, a unique tip or checklist.\n4. Structure: hook + promise intro; short paragraphs, bullets, 1\u20132 small tables; 4\u20137 internal-link suggestions with anchor text; 6\u201310 FAQs; CTA conclusion.\n5. Tone: warm, expert, conversational, human, no fluff.\n6. End with: SEO title (60\u2013120 chars), meta description (150\u2013160), H1, 3\u20134 image alt texts, brief schema outline.\n\nOutput format:\n## Quick Strategy Summary\n## Outline\n## Full Article\n## SEO Elements'],
+ areapage:['Area page (hyperlocal)','You are a senior local SEO specialist who ranks single-location businesses by creating hyperlocal landing pages that dominate neighborhood-specific searches.\n\nTask: Write a high-converting, SEO-optimized neighborhood landing page (1,200\u20132,200 words) for our [TYPE OF BUSINESS] "[BUSINESS NAME]" located in [LOCATION] and serving [AREA].\n\nPage goal: rank for "[service] [neighborhood]", "best [service] in [neighborhood]", "[service] near [landmark]".\nPrimary keyword: "[PRIMARY KEYWORD]"\n\nKey facts to weave in: full NAP [ADDRESS]; proximity/distance; unique selling points [LIST]; local tie-ins (landmarks, events, pain points).\n\nInstructions:\n1. Analyze hyperlocal intent \u2014 what locals here actually want; prove relevance without faking an address.\n2. Local-first H1\u2013H3 outline: neighborhood intro \u2192 why we fit locals \u2192 tailored services \u2192 directions/proof \u2192 FAQs \u2192 CTA.\n3. Build local E-E-A-T: real streets/markets/events, proximity proof + map embed suggestion, local customer types.\n4. Include "Why Locals Choose Us", directions from key spots, embedded map + Get Directions CTA, 8\u201310 local FAQs, strong CTA.\n5. End with SEO title + meta, LocalBusiness + areaServed schema, 4\u20136 local image alt texts, 5\u20137 internal links.\n6. Tone: warm, community-oriented, neighborly, human.\n\nOutput format:\n## Hyperlocal Intent Analysis\n## Page Outline\n## Full Page Content\n## On-Page SEO & Schema Recommendations'],
+ faq:['GBP FAQ','Generate 6\u20138 FAQ questions and answers for a [TYPE OF BUSINESS] in [CITY]. Keep each answer 1\u20132 sentences, helpful, and natural. These will go on the Google Business Profile.'],
+ backlinks:['Find citations/backlinks','Suggest some backlinks and citation sources I could get for a [NICHE] in [LOCATION]. Prioritize local directories and listing sites that already rank in the top 20 for "[KEYWORD]".'],
+};
+
+// ---------- STATE ----------
+const DEFAULT={date:'',streak:0,reps:{},routine:[],leads:[],deals:[],posted:[],clients:[],openClient:null};
+let S=JSON.parse(JSON.stringify(DEFAULT));
+let mem=null; // fallback store
+
+async function load(){
+  try{
+    const r=await window.storage.get('pr:state');
+    if(r&&r.value) S=Object.assign(JSON.parse(JSON.stringify(DEFAULT)),JSON.parse(r.value));
+  }catch(e){ if(mem) S=mem; }
+  rollover(); renderAll();
+}
+async function save(){
+  mem=S;
+  try{ await window.storage.set('pr:state',JSON.stringify(S)); }catch(e){}
+}
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+function monthStr(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1);}
+
+function rollover(){
+  const t=todayStr();
+  if(S.date!==t){
+    // streak: if yesterday had any reps, keep streak +1, else reset
+    const had=Object.values(S.reps||{}).some(v=>v>0);
+    if(S.date==='') S.streak=0;
+    else S.streak = had ? (S.streak+1) : 0;
+    S.date=t; S.reps={}; S.routine=[];
+  }
+  REP_DEFS.forEach(r=>{ if(S.reps[r.k]==null) S.reps[r.k]=0; });
+  if(!S.routine.length) S.routine=ROUTINE.map(()=>false);
+}
+
+// ---------- RENDER ----------
+function renderAll(){
+  document.getElementById('today').textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  document.getElementById('streak').textContent=S.streak;
+  renderReps(); renderRoutine(); renderBoard(); renderVideos(); renderClients(); renderMoney(); renderPlaybook(); renderGoal();
+}
+
+function renderReps(){
+  const el=document.getElementById('reps'); el.innerHTML='';
+  REP_DEFS.forEach(r=>{
+    const v=S.reps[r.k]||0, pct=Math.min(100,Math.round(v/r.tgt*100)), done=v>=r.tgt;
+    const d=document.createElement('div'); d.className='rep';
+    d.innerHTML=`<div class="name">${r.name}</div>
+      <div class="num ${done?'done':''}">${v}</div>
+      <div class="tgt">of ${r.tgt}${done?' ✓':''}</div>
+      <div class="ctrls"><button onclick="bump('${r.k}',-1)">–</button><button class="plus" onclick="bump('${r.k}',1)">+</button></div>
+      <div class="minibar"><i style="width:${pct}%"></i></div>`;
+    el.appendChild(d);
+  });
+  renderScore();
+}
+function renderScore(){
+  let s=0; REP_DEFS.forEach(r=>{ s+=Math.min(1,(S.reps[r.k]||0)/r.tgt); });
+  const pct=Math.round(s/REP_DEFS.length*100);
+  document.getElementById('score').textContent=pct;
+  const m=document.getElementById('scoreMsg');
+  m.textContent = pct>=100?'Full send. This is a 10K month being built.':pct>=60?'Strong. Don\u2019t coast \u2014 finish the reps.':pct>=30?'Warming up. Stack more calls.':'Hit your reps. Money loves motion.';
+}
+function bump(k,n){ S.reps[k]=Math.max(0,(S.reps[k]||0)+n); save(); renderReps(); }
+
+function renderRoutine(){
+  const el=document.getElementById('routine'); el.innerHTML='';
+  ROUTINE.forEach((r,i)=>{
+    const done=S.routine[i];
+    const d=document.createElement('div'); d.className='chk'+(done?' done':'');
+    d.innerHTML=`<div class="box"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div><div class="t">${r.t}</div><div class="tag">${r.tag}</div>`;
+    d.onclick=()=>{ S.routine[i]=!S.routine[i]; save(); renderRoutine(); };
+    el.appendChild(d);
+  });
+}
+function resetDay(){ S.routine=ROUTINE.map(()=>false); REP_DEFS.forEach(r=>S.reps[r.k]=0); save(); renderReps(); renderRoutine(); toast('Day reset'); }
+
+// pipeline
+const STAGES=[['lead','New leads'],['audit','Audit sent'],['call','Call booked'],['closed_site','Closed · site'],['closed_ret','Closed · retainer']];
+function renderBoard(){
+  const b=document.getElementById('board'); b.innerHTML='';
+  STAGES.forEach(([k,label],si)=>{
+    const items=S.leads.filter(l=>l.stage===k);
+    const col=document.createElement('div'); col.className='col'; col.dataset.k=k;
+    col.innerHTML=`<h3>${label} <b>${items.length}</b></h3>`;
+    items.forEach(l=>{
+      const card=document.createElement('div'); card.className='card';
+      const next=si<STAGES.length-1?`<button class="go" onclick="moveLead(${l.id},1)">Advance →</button>`:'';
+      const back=si>0?`<button onclick="moveLead(${l.id},-1)">←</button>`:'';
+      card.innerHTML=`<div class="nm">${esc(l.name||'Lead')}</div><div class="sub">${esc(l.biz||'')}${l.src?' · '+esc(l.src):''}</div>
+        <div class="mv">${back}${next}<button class="x" onclick="delLead(${l.id})">✕</button></div>`;
+      col.appendChild(card);
+    });
+    if(!items.length) col.innerHTML+='<div class="empty">—</div>';
+    b.appendChild(col);
+  });
+}
+function addLead(){
+  const name=val('lName'),biz=val('lBiz'),src=val('lSrc');
+  if(!name&&!biz){toast('Add a name or business');return;}
+  S.leads.push({id:Date.now(),name,biz,src,stage:'lead'});
+  document.getElementById('lName').value='';document.getElementById('lBiz').value='';document.getElementById('lSrc').value='';
+  save(); renderBoard(); toast('Lead added');
+}
+function moveLead(id,dir){
+  const l=S.leads.find(x=>x.id===id); if(!l)return;
+  const idx=STAGES.findIndex(s=>s[0]===l.stage), ni=idx+dir;
+  if(ni<0||ni>=STAGES.length)return; l.stage=STAGES[ni][0];
+  save(); renderBoard();
+  if(l.stage==='closed_site'){toast('Site closed! Log it in Money →');}
+  if(l.stage==='closed_ret'){toast('Retainer closed! 🔥 Log it in Money →');}
+}
+function delLead(id){ S.leads=S.leads.filter(x=>x.id!==id); save(); renderBoard(); }
+
+// videos
+function renderVideos(){
+  const g=document.getElementById('vgrid'); g.innerHTML='';
+  VIDEOS.forEach((v,i)=>{
+    const posted=S.posted.includes(i);
+    const c=document.createElement('div'); c.className='vcard'+(posted?' posted':'');
+    c.innerHTML=`${posted?'<div class="pill">✓ Posted</div>':''}<div class="nidx">REEL ${String(i+1).padStart(2,'0')}</div>
+      <div class="vt">${esc(v[0])}</div><div class="vh">${esc(v[1])}</div>
+      <div class="vb"><button class="copy" onclick="copyPrompt(${i})">Copy prompt</button>
+      <button onclick="togglePost(${i})">${posted?'Undo':'Posted'}</button></div>`;
+    g.appendChild(c);
+  });
+  document.getElementById('vidCount').textContent=`${S.posted.length} of ${VIDEOS.length} posted · pick one, copy the prompt, paste into Claude Design`;
+}
+function buildPrompt(i){
+  const v=VIDEOS[i];
+  return `Make a vertical 9:16 short-form reel video for Instagram (ProfResults \u2014 local SEO / Google ranking for home-service businesses). Energetic, clean, bold text-on-screen, fast cuts, mobile-first.
+
+TOPIC: ${v[0]}
+ANGLE: ${v[1]}
+
+Structure:
+- HOOK (0\u20132s): a punchy problem line that stops the scroll, in the business owner's own words.
+- TIP (3\u201325s): one specific, actionable point about "${v[0]}" \u2014 plain English, no jargon, concrete steps they can do today.
+- CTA (last 3s): "Comment AUDIT and I'll check your Google profile for FREE."
+
+Style: dark background, one bright green accent, big condensed headline text, captions on every line, ProfResults wordmark bottom corner. Confident, fast, no fluff. Keep it under 30 seconds.`;
+}
+function copyPrompt(i){
+  const txt=buildPrompt(i);
+  navigator.clipboard.writeText(txt).then(()=>toast('Prompt copied → paste in Claude Design'),()=>{
+    const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('Prompt copied');
+  });
+}
+function togglePost(i){
+  if(S.posted.includes(i)){ S.posted=S.posted.filter(x=>x!==i); }
+  else { S.posted.push(i); S.reps.reels=(S.reps.reels||0)+1; toast('Reel banked +1'); renderReps(); }
+  save(); renderVideos();
+}
+function resetVids(){ S.posted=[]; save(); renderVideos(); toast('Reels reset'); }
+
+// money
+function renderMoney(){
+  const m=monthStr();
+  const month=S.deals.filter(d=>d.month===m);
+  const total=month.reduce((a,b)=>a+(+b.amt||0),0);
+  const mrr=S.deals.filter(d=>d.type==='ret').reduce((a,b)=>a+(+b.amt||0),0);
+  document.getElementById('mTotal').textContent=total.toLocaleString();
+  document.getElementById('mMrr').textContent=mrr.toLocaleString();
+  document.getElementById('mCount').textContent=month.length;
+  const el=document.getElementById('deals'); el.innerHTML='';
+  if(!S.deals.length){ el.innerHTML='<div class="empty">No deals logged yet. Close one and log it here.</div>'; }
+  [...S.deals].reverse().forEach(d=>{
+    const cls=d.type==='ret'?'ret':d.type==='site'?'site':'other';
+    const lab=d.type==='ret'?'Retainer':d.type==='site'?'Website':'Custom';
+    const row=document.createElement('div'); row.className='deal';
+    row.innerHTML=`<span class="tp ${cls}">${lab}</span><div><div class="dn">${esc(d.biz||'Client')}</div><div class="ds">${d.type==='ret'?'/mo recurring':'one-time'} · ${d.month}</div></div><div class="da">$${(+d.amt).toLocaleString()}</div><button class="del" onclick="delDeal(${d.id})">🗑</button>`;
+    el.appendChild(row);
+  });
+  renderGoal();
+}
+function addDeal(){
+  const biz=val('dBiz'); const type=val('dType'); let amt=parseFloat(val('dAmt'));
+  if(isNaN(amt)) amt = type==='site'?425:type==='ret'?400:0;
+  if(!amt){toast('Enter an amount');return;}
+  S.deals.push({id:Date.now(),biz,type,amt,month:monthStr()});
+  document.getElementById('dBiz').value='';document.getElementById('dAmt').value='';
+  save(); renderMoney(); toast('Logged $'+amt.toLocaleString());
+}
+function delDeal(id){ S.deals=S.deals.filter(x=>x.id!==id); save(); renderMoney(); }
+
+function renderGoal(){
+  const m=monthStr();
+  const month=S.deals.filter(d=>d.month===m);
+  const total=month.reduce((a,b)=>a+(+b.amt||0),0);
+  const mrr=S.deals.filter(d=>d.type==='ret').reduce((a,b)=>a+(+b.amt||0),0);
+  const sites=month.filter(d=>d.type!=='ret').reduce((a,b)=>a+(+b.amt||0),0);
+  const clients=S.deals.filter(d=>d.type==='ret').length;
+  const pct=Math.min(100,Math.round(total/10000*100));
+  document.getElementById('gNow').textContent=total.toLocaleString();
+  document.getElementById('gLeft').textContent=Math.max(0,10000-total).toLocaleString();
+  document.getElementById('gBar').style.width=pct+'%';
+  document.getElementById('sMrr').textContent='$'+mrr.toLocaleString();
+  document.getElementById('sSites').textContent='$'+sites.toLocaleString();
+  document.getElementById('sClients').textContent=clients;
+}
+
+// playbook
+// ---------- CLIENTS ----------
+function clientProgress(c){
+  let total=0,done=0;
+  PROCESS.forEach((w,wi)=>w.steps.forEach((s,si)=>{ total++; if((c.done||{})[wi+'-'+si]) done++; }));
+  return {done,total,pct:total?Math.round(done/total*100):0};
+}
+function currentWeek(c){
+  for(let wi=0;wi<PROCESS.length;wi++){
+    const all=PROCESS[wi].steps.every((s,si)=>(c.done||{})[wi+'-'+si]);
+    if(!all) return wi+1;
+  }
+  return 12;
+}
+function renderClients(){
+  const list=document.getElementById('clientList'), detail=document.getElementById('clientDetail');
+  if(S.openClient!=null && S.clients.find(c=>c.id===S.openClient)){
+    list.style.display='none'; detail.style.display='block'; renderClientDetail();
+    return;
+  }
+  S.openClient=null; detail.style.display='none'; list.style.display='block';
+  list.innerHTML='';
+  if(!S.clients.length){ list.innerHTML='<div class="empty">No active clients yet. Close a deal, then start the client here to run your 12-week process.</div>'; return; }
+  S.clients.forEach(c=>{
+    const p=clientProgress(c), wk=currentWeek(c);
+    const card=document.createElement('div'); card.className='clientcard';
+    card.innerHTML=`<div style="flex:1"><div class="cn">${esc(c.biz)}</div><div class="cc">${esc(c.contact||'')}${c.contact?' · ':''}Week ${wk} of 12</div></div>
+      <div class="cprog"><div class="cring">${p.pct}%</div><div class="cwk">${p.done}/${p.total} steps</div><div class="cbar"><i style="width:${p.pct}%"></i></div></div>
+      <button class="cdel" onclick="event.stopPropagation();delClient(${c.id})">🗑</button>`;
+    card.onclick=()=>{ S.openClient=c.id; save(); renderClients(); };
+    list.appendChild(card);
+  });
+}
+function renderClientDetail(){
+  const c=S.clients.find(x=>x.id===S.openClient); if(!c)return;
+  const detail=document.getElementById('clientDetail'); const p=clientProgress(c), wk=currentWeek(c);
+  if(!c.done)c.done={};
+  let html=`<button class="backbtn" onclick="closeClient()">← All clients</button>
+    <div class="cdhead"><div><div class="cdn">${esc(c.biz)}</div><div class="cds">${esc(c.contact||'')} · ${p.pct}% complete · on Week ${wk}</div></div></div>`;
+  PROCESS.forEach((w,wi)=>{
+    const wdone=w.steps.every((s,si)=>c.done[wi+'-'+si]);
+    const dcount=w.steps.filter((s,si)=>c.done[wi+'-'+si]).length;
+    const isOpen=(wi+1)===wk;
+    html+=`<div class="week ${wdone?'wdone':''} ${isOpen?'open':''}" data-wi="${wi}">
+      <div class="whead" onclick="toggleWeek(${wi})"><div class="wnum">${w.wk}</div><div class="wtitle">${w.title}</div><div class="wcount">${dcount}/${w.steps.length}</div><div class="wch">+</div></div>
+      <div class="wbody"><div class="winner">`;
+    w.steps.forEach((s,si)=>{
+      const sd=c.done[wi+'-'+si];
+      html+=`<div class="step ${sd?'sdone':''}" onclick="toggleStep(${wi},${si})"><div class="sbox"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div><div class="stx">${esc(s)}${w.adv?'<span class="adv">adv</span>':''}</div></div>`;
+    });
+    // assets for this week
+    const btns=[];
+    if(w.email&&EMAILS[w.email]) btns.push(`<button class="email" onclick="copyAsset('email','${w.email}')">📧 ${esc(EMAILS[w.email][0])}</button>`);
+    const promptMap={2:['dedupe','descriptions','faq'],5:[],6:['servicepage','areapage'],8:['servicepage','areapage'],9:['backlinks']};
+    if(w.wk==='Week 3') ['dedupe','descriptions','faq'].forEach(k=>btns.push(`<button class="prompt" onclick="copyAsset('prompt','${k}')">🤖 ${esc(PROMPTS[k][0])}</button>`));
+    if(w.wk==='Week 4') btns.push(`<button class="email" onclick="copyAsset('email','services')">📧 ${esc(EMAILS.services[0])}</button>`);
+    if(w.wk==='Week 6'||w.wk==='Week 7') ['servicepage','areapage'].forEach(k=>btns.push(`<button class="prompt" onclick="copyAsset('prompt','${k}')">🤖 ${esc(PROMPTS[k][0])}</button>`));
+    if(w.wk==='Week 10') btns.push(`<button class="prompt" onclick="copyAsset('prompt','backlinks')">🤖 ${esc(PROMPTS.backlinks[0])}</button>`);
+    if(btns.length) html+=`<div class="assets">${btns.join('')}</div>`;
+    html+=`</div></div></div>`;
+  });
+  // weekly ongoing
+  html+=`<div class="week"><div class="whead" onclick="toggleWeek(99)"><div class="wnum" style="color:var(--amber)">Weekly</div><div class="wtitle">Ongoing (after week 12)</div><div class="wch">+</div></div><div class="wbody"><div class="winner">`;
+  WEEKLY_STEPS.forEach(s=>{ html+=`<div class="step" style="cursor:default"><div class="sbox" style="border-color:var(--amber)"></div><div class="stx">${esc(s)}</div></div>`; });
+  html+=`</div></div></div>`;
+  detail.innerHTML=html;
+}
+function toggleWeek(wi){
+  const el=document.querySelector(`.week[data-wi="${wi}"]`);
+  if(el){ el.classList.toggle('open'); return; }
+  // weekly box (no data-wi)
+  event.currentTarget.closest('.week').classList.toggle('open');
+}
+function toggleStep(wi,si){
+  const c=S.clients.find(x=>x.id===S.openClient); if(!c)return;
+  if(!c.done)c.done={}; const k=wi+'-'+si; c.done[k]=!c.done[k];
+  save(); renderClientDetail();
+}
+function addClient(){
+  const biz=val('cBiz'), contact=val('cContact');
+  if(!biz){toast('Add a business name');return;}
+  S.clients.push({id:Date.now(),biz,contact,done:{}});
+  document.getElementById('cBiz').value='';document.getElementById('cContact').value='';
+  save(); renderClients(); toast('Client started \u2014 12-week process loaded');
+}
+function delClient(id){ if(!confirm('Remove this client and their progress?'))return; S.clients=S.clients.filter(x=>x.id!==id); if(S.openClient===id)S.openClient=null; save(); renderClients(); }
+function closeClient(){ S.openClient=null; save(); renderClients(); }
+function copyAsset(type,key){
+  const a = type==='email'?EMAILS[key]:PROMPTS[key]; if(!a)return;
+  navigator.clipboard.writeText(a[1]).then(()=>toast((type==='email'?'Email':'Prompt')+' copied'),()=>{
+    const ta=document.createElement('textarea');ta.value=a[1];document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('Copied');
+  });
+}
+
+function renderPlaybook(){
+  const el=document.getElementById('playbook'); el.innerHTML='';
+  PLAYBOOK.forEach(([q,a])=>{
+    const d=document.createElement('div'); d.className='play';
+    d.innerHTML=`<div class="pq">${q}<span class="ch">+</span></div><div class="pa"><div class="inner">${a}</div></div>`;
+    d.querySelector('.pq').onclick=()=>d.classList.toggle('open');
+    el.appendChild(d);
+  });
+}
+
+// helpers
+function val(id){return document.getElementById(id).value.trim();}
+function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+let tt;
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),1800);}
+
+// tabs
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+    document.querySelectorAll('section').forEach(x=>x.classList.remove('on'));
+    t.classList.add('on');
+    document.getElementById('s-'+t.dataset.go).classList.add('on');
+    window.scrollTo({top:0,behavior:'smooth'});
+  };
+});
+
+load();
+</script>
